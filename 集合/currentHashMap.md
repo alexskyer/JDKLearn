@@ -558,18 +558,18 @@ private final Node<K,V>[] initTable() {
 ```
 #### 六、HashMap、HashTable、CurrentHashMap比较
 
-| Left-Aligned  | HashMap  | HashTable |  CurrentHashMap |
-| :------------ |:---------------:| -----:| -----:|
-| 是否线程安全    | 否 | 是 | 是 |
-| 线程安全方法    |  | 采用synchronized类锁,效率低| 采用CAS+synchronized,只锁住当前操作的bucket |
-| 是否允许null    | 是 | 否 | 否 |
-| 数据结构    | 数组＋链表+红黑树 | 数组＋链表 | 数组＋链表+红黑树 |
-| hash算法    | key的hashCode高16位和自已的低16位做异或运算| key.hashcode | (key的hashCode高16位和自已的低16位做异或运算) & 0x7fffffff |
-| 定位方法    | hashcode & (容量大小 - 1) | (hash & 0x7FFFFFFF) % 容量大小| hashcode & (容量大小 - 1) |
-| 扩容方法    | 大于阈值，容量扩充两倍 | newCapacity = (oldCapacity << 1) + 1 | 单线程创建哈希表（容量之前两倍），多线程复制bucket至新表 |
-| 链表插入    | 尾部 | 头部 | 尾部 |
-| 继承的类    | AbstractMap | Dictionary | AbstractMap |
-| 实现接口    | map | map | currentMap |
-| 默认容量    | 16 | 11 | 16 |
-| 默认负载因子    | 0.75 | 0.75 | 0.75 |
-| size方法    | 直接返回成员变量size | 直接返回成员变量count | 遍历CountrCell数组值进行累加，再加baseCount |
+  |   | HashMap  | HashTable |  CurrentHashMap |
+  | :------------ |:---------------:| -----:| -----:|
+  | 是否线程安全    | 否 | 是 | 是 |
+  | 线程安全方法    |  | 采用synchronized类锁,效率低| 采用CAS+synchronized,只锁住当前操作的bucket |
+  | 是否允许null    | 是 | 否 | 否 |
+  | 数据结构    | 数组＋链表+红黑树 | 数组＋链表 | 数组＋链表+红黑树 |
+  | hash算法    | key的hashCode高16位和自已的低16位做异或运算| key.hashcode | (key的hashCode高16位和自已的低16位做异或运算) & 0x7fffffff |
+  | 定位方法    | hashcode & (容量大小 - 1) | (hash & 0x7FFFFFFF) % 容量大小| hashcode & (容量大小 - 1) |
+  | 扩容方法    | 大于阈值，容量扩充两倍 | newCapacity = (oldCapacity << 1) + 1 | 单线程创建哈希表（容量之前两倍），多线程复制bucket至新表 |
+  | 链表插入    | 尾部 | 头部 | 尾部 |
+  | 继承的类    | AbstractMap | Dictionary | AbstractMap |
+  | 实现接口    | map | map | currentMap |
+  | 默认容量    | 16 | 11 | 16 |
+  | 默认负载因子    | 0.75 | 0.75 | 0.75 |
+  | size方法    | 直接返回成员变量size | 直接返回成员变量count | 遍历CountrCell数组值进行累加，再加baseCount |

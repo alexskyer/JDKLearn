@@ -133,36 +133,27 @@ public class Hashtable<K,V>
     implements Map<K,V>, Cloneable, java.io.Serializable {
 
     /**
-     * The hash table data.
+     * e hash table data.
      */
     private transient Entry<?,?>[] table;
 
     /**
-     * The total number of entries in the hash table.
+     * entry的个数
      */
     private transient int count;
 
     /**
-     * The table is rehashed when its size exceeds this threshold.  (The
-     * value of this field is (int)(capacity * loadFactor).)
-     *
-     * @serial
+     * hashtable进行扩容的临界值（这个值等于(int)(capacity * loadFactor)）
      */
     private int threshold;
 
     /**
-     * The load factor for the hashtable.
-     *
-     * @serial
+     * 负载因子
      */
     private float loadFactor;
 
     /**
-     * The number of times this Hashtable has been structurally modified
-     * Structural modifications are those that change the number of entries in
-     * the Hashtable or otherwise modify its internal structure (e.g.,
-     * rehash).  This field is used to make iterators on Collection-views of
-     * the Hashtable fail-fast.  (See ConcurrentModificationException).
+     * hashtable被结构型修改的次数
      */
     private transient int modCount = 0;
 
@@ -193,33 +184,26 @@ public class Hashtable<K,V>
     }
 
     /**
-     * Constructs a new, empty hashtable with the specified initial capacity
-     * and default load factor (0.75).
-     *
-     * @param     initialCapacity   the initial capacity of the hashtable.
-     * @exception IllegalArgumentException if the initial capacity is less
-     *              than zero.
+     * 使用指定参数初始化容量和默认负载因子（0.75）来构造一个空的hashtable.
+     * @param     initialCapacity   指定参数初始化容量
+     * @exception IllegalArgumentException 如果initialCapacity小于0
      */
     public Hashtable(int initialCapacity) {
         this(initialCapacity, 0.75f);
     }
 
     /**
-     * Constructs a new, empty hashtable with a default initial capacity (11)
-     * and load factor (0.75).
+     *  使用默认初始化容量（11）和默认负载因子（0.75）来构造一个空的hashtable.
+     *  这里可以看到，Hashtable默认初始化容量为16，而HashMap的默认初始化容量为11
      */
     public Hashtable() {
         this(11, 0.75f);
     }
 
     /**
-     * Constructs a new hashtable with the same mappings as the given
-     * Map.  The hashtable is created with an initial capacity sufficient to
-     * hold the mappings in the given Map and a default load factor (0.75).
-     *
-     * @param t the map whose mappings are to be placed in this map.
-     * @throws NullPointerException if the specified map is null.
-     * @since   1.2
+     * 使用指定的键值对集合t来构造hashtable。
+     *  @param t 指定的键值对集合
+     *  @throws NullPointerException 如果指定的键值对集合为null
      */
     public Hashtable(Map<? extends K, ? extends V> t) {
         this(Math.max(2*t.size(), 11), 0.75f);
@@ -380,28 +364,32 @@ public class Hashtable<K,V>
     private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
     /**
-     * Increases the capacity of and internally reorganizes this
-     * hashtable, in order to accommodate and access its entries more
-     * efficiently.  This method is called automatically when the
-     * number of keys in the hashtable exceeds this hashtable's capacity
-     * and load factor.
+     * 增加hashtable的容量，为了更有效地存放和找到它的entry。
+     * 当键值对的数量超过了临界值（capacity*load factor）这个方法自动调用
+     * 长度变为原来的2倍+1
      */
     @SuppressWarnings("unchecked")
     protected void rehash() {
+        //记录原容量
         int oldCapacity = table.length;
         Entry<?,?>[] oldMap = table;
 
-        // overflow-conscious code
+        // 新的容量为旧的容量的2倍+1
         int newCapacity = (oldCapacity << 1) + 1;
+        //如果新的容量大于容量的最大值MAX_ARRAY_SIZE
         if (newCapacity - MAX_ARRAY_SIZE > 0) {
+            //如果旧容量为MAX_ARRAY_SIZE，容量不变，中断方法的执行
             if (oldCapacity == MAX_ARRAY_SIZE)
                 // Keep running with MAX_ARRAY_SIZE buckets
                 return;
+            //如果旧容量不为MAX_ARRAY_SIZE，新容量变为MAX_ARRAY_SIZE
             newCapacity = MAX_ARRAY_SIZE;
         }
+        //创建新的数组，容量为新容量
         Entry<?,?>[] newMap = new Entry<?,?>[newCapacity];
-
+        //结构性修改次数+1
         modCount++;
+        //计算扩容的临界值
         threshold = (int)Math.min(newCapacity * loadFactor, MAX_ARRAY_SIZE + 1);
         table = newMap;
 
@@ -416,41 +404,45 @@ public class Hashtable<K,V>
             }
         }
     }
-
+    /**
+     * 根据指参数向table中添加entry
+     */
     private void addEntry(int hash, K key, V value, int index) {
+        //结构性修改次数+1
         modCount++;
-
+        //记录现在的table
         Entry<?,?> tab[] = table;
+        //如果现在的entry数量大于临界值
         if (count >= threshold) {
-            // Rehash the table if the threshold is exceeded
+            // 扩容
             rehash();
-
+            //记录新的table
             tab = table;
+            //重新计算key的hash
             hash = key.hashCode();
+            //重新计算index
             index = (hash & 0x7FFFFFFF) % tab.length;
         }
 
-        // Creates the new entry.
+        // 创建一个新的entry
         @SuppressWarnings("unchecked")
         Entry<K,V> e = (Entry<K,V>) tab[index];
+        //将entry添加到table中
         tab[index] = new Entry<>(hash, key, value, e);
+        //table大小+1
         count++;
     }
 
-    /**
-     * Maps the specified <code>key</code> to the specified
-     * <code>value</code> in this hashtable. Neither the key nor the
-     * value can be <code>null</code>. <p>
+     /**
+     * 添加指定键值对到hashtable中
+     * 被添加的键值对中的key和value都不能为null
      *
-     * The value can be retrieved by calling the <code>get</code> method
-     * with a key that is equal to the original key.
+     * value可以通过get方法被取出。
      *
      * @param      key     the hashtable key
      * @param      value   the value
-     * @return     the previous value of the specified key in this hashtable,
-     *             or <code>null</code> if it did not have one
-     * @exception  NullPointerException  if the key or value is
-     *               <code>null</code>
+     * @return     如果hashtable中已经存在key，则返回原来的value
+     * @exception  NullPointerException  如果key或者value为null
      * @see     Object#equals(Object)
      * @see     #get(Object)
      */
@@ -463,36 +455,43 @@ public class Hashtable<K,V>
         // Makes sure the key is not already in the hashtable.
         Entry<?,?> tab[] = table;
         int hash = key.hashCode();
+        //找到key在table中的索引
         int index = (hash & 0x7FFFFFFF) % tab.length;
         @SuppressWarnings("unchecked")
+        //获取key所在索引的entry
         Entry<K,V> entry = (Entry<K,V>)tab[index];
+        //遍历entry，判断key是否已经存在
         for(; entry != null ; entry = entry.next) {
+            //如果key已经存在
             if ((entry.hash == hash) && entry.key.equals(key)) {
+                //保存旧的value
                 V old = entry.value;
+                //替换value
                 entry.value = value;
+                //返回旧的value
                 return old;
             }
         }
-
+        //如果key在hashtable不是已经存在，就直接将键值对添加到table中，返回null
         addEntry(hash, key, value, index);
         return null;
     }
 
     /**
-     * Removes the key (and its corresponding value) from this
-     * hashtable. This method does nothing if the key is not in the hashtable.
+     * 删除hashtable中参数key映射的键值对。如果参数key在hashtable不存在，方法不做任何操作。
      *
-     * @param   key   the key that needs to be removed
-     * @return  the value to which the key had been mapped in this hashtable,
-     *          or <code>null</code> if the key did not have a mapping
-     * @throws  NullPointerException  if the key is <code>null</code>
+     * @param   key   参数key
+     * @return  参数key映射的value，如果不存在对应的映射，返回null。
+     * @throws  NullPointerException  如果key为null
      */
     public synchronized V remove(Object key) {
         Entry<?,?> tab[] = table;
         int hash = key.hashCode();
+        //计算key在hashtable中的索引
         int index = (hash & 0x7FFFFFFF) % tab.length;
         @SuppressWarnings("unchecked")
         Entry<K,V> e = (Entry<K,V>)tab[index];
+        //遍历entry，如果entry中存在key为参数key的键值对，就删除键值对，并返回键值对的value
         for(Entry<K,V> prev = null ; e != null ; prev = e, e = e.next) {
             if ((e.hash == hash) && e.key.equals(key)) {
                 modCount++;
@@ -507,6 +506,7 @@ public class Hashtable<K,V>
                 return oldValue;
             }
         }
+        //如果不存在key为参数key的键值对，返回value
         return null;
     }
 
@@ -706,7 +706,13 @@ public class Hashtable<K,V>
                     return true;
             return false;
         }
-
+        /**
+         * 删除hashtable中参数key映射的键值对。如果参数key在hashtable不存在，方法不做任何操作。
+         *
+         * @param   key   参数key
+         * @return  参数key映射的value，如果不存在对应的映射，返回null。
+         * @throws  NullPointerException  如果key为null
+         */
         public boolean remove(Object o) {
             if (!(o instanceof Map.Entry))
                 return false;
@@ -714,10 +720,12 @@ public class Hashtable<K,V>
             Object key = entry.getKey();
             Entry<?,?>[] tab = table;
             int hash = key.hashCode();
+            //计算key在hashtable中的索引
             int index = (hash & 0x7FFFFFFF) % tab.length;
 
             @SuppressWarnings("unchecked")
             Entry<K,V> e = (Entry<K,V>)tab[index];
+            //遍历entry，如果entry中存在key为参数key的键值对，就删除键值对，并返回键值对的value
             for(Entry<K,V> prev = null; e != null; prev = e, e = e.next) {
                 if (e.hash==hash && e.equals(entry)) {
                     modCount++;
