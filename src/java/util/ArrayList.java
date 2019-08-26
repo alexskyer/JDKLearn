@@ -110,34 +110,32 @@ public class ArrayList<E> extends AbstractList<E>
     private static final long serialVersionUID = 8683452581122892189L;
 
     /**
-     * Default initial capacity.
+     * 初始容量为10
      */
     private static final int DEFAULT_CAPACITY = 10;
 
     /**
-     * Shared empty array instance used for empty instances.
+     * 指定该ArrayList容量为0时，返回该空数组
      */
     private static final Object[] EMPTY_ELEMENTDATA = {};
 
     /**
-     * Shared empty array instance used for default sized empty instances. We
-     * distinguish this from EMPTY_ELEMENTDATA to know how much to inflate when
-     * first element is added.
+     * 当调用无参构造方法，返回的是该数组。刚创建一个ArrayList 时，其内数据量为0。
+     * 它与EMPTY_ELEMENTDATA的区别就是：该数组是默认返回的，而后者是在用户指定容量为0时返回
      */
     private static final Object[] DEFAULTCAPACITY_EMPTY_ELEMENTDATA = {};
 
     /**
-     * The array buffer into which the elements of the ArrayList are stored.
-     * The capacity of the ArrayList is the length of this array buffer. Any
-     * empty ArrayList with elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA
-     * will be expanded to DEFAULT_CAPACITY when the first element is added.
+     * 保存添加到ArrayList中的元素。
+     * ArrayList的容量就是该数组的长度。
+     * 该值为DEFAULTCAPACITY_EMPTY_ELEMENTDATA 时，当第一次添加元素进入ArrayList中时，数组将扩容值DEFAULT_CAPACITY。
+     * 被标记为transient，在对象被序列化的时候不会被序列化
+     * ArrayList自定义了它的序列化和反序列化方式。详情请查看writeObject(java.io.ObjectOutputStream s)和readObject(java.io.ObjectOutputStream s)方法
      */
     transient Object[] elementData; // non-private to simplify nested class access
 
     /**
-     * The size of the ArrayList (the number of elements it contains).
-     *
-     * @serial
+     * ArrayList的实际大小（数组包含的元素个数
      */
     private int size;
 
@@ -201,20 +199,19 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
-     * Increases the capacity of this <tt>ArrayList</tt> instance, if
-     * necessary, to ensure that it can hold at least the number of elements
-     * specified by the minimum capacity argument.
+     * 增加ArrayList容量。
      *
-     * @param   minCapacity   the desired minimum capacity
+     * @param   minCapacity   想要的最小容量
      */
     public void ensureCapacity(int minCapacity) {
+        // 如果elementData等于DEFAULTCAPACITY_EMPTY_ELEMENTDATA，最小扩容量为DEFAULT_CAPACITY，否则为0
         int minExpand = (elementData != DEFAULTCAPACITY_EMPTY_ELEMENTDATA)
             // any size if not default element table
             ? 0
             // larger than default for default empty table. It's already
             // supposed to be at default size.
             : DEFAULT_CAPACITY;
-
+        //如果想要的最小容量大于最小扩容量，则使用想要的最小容量
         if (minCapacity > minExpand) {
             ensureExplicitCapacity(minCapacity);
         }
@@ -231,43 +228,55 @@ public class ArrayList<E> extends AbstractList<E>
         ensureExplicitCapacity(calculateCapacity(elementData, minCapacity));
     }
 
+    /**
+     * 数组容量检查，不够时则进行扩容，只供类内部使用
+     * @param minCapacity 想要的最小容量
+     */
     private void ensureExplicitCapacity(int minCapacity) {
         modCount++;
 
-        // overflow-conscious code
+        //确保指定的最小容量 > 数组缓冲区当前的长度
         if (minCapacity - elementData.length > 0)
+            //扩容
             grow(minCapacity);
     }
 
     /**
-     * The maximum size of array to allocate.
-     * Some VMs reserve some header words in an array.
-     * Attempts to allocate larger arrays may result in
-     * OutOfMemoryError: Requested array size exceeds VM limit
+     * 分派给arrays的最大容量为什么要减去8呢？
+     * 因为某些VM会在数组中保留一些头字，尝试分配这个最大存储容量，可能会导致array容量大于VM的limit，最终导致OutOfMemoryError。
      */
     private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
     /**
-     * Increases the capacity to ensure that it can hold at least the
-     * number of elements specified by the minimum capacity argument.
-     *
-     * @param minCapacity the desired minimum capacity
+     * 扩容，保证ArrayList至少能存储minCapacity个元素
+     * 第一次扩容，逻辑为newCapacity = oldCapacity + (oldCapacity >> 1);即在原有的容量基础上增加一半
      */
     private void grow(int minCapacity) {
         // overflow-conscious code
         int oldCapacity = elementData.length;
+        //扩容。新的容量=当前容量+当前容量/2.即将当前容量增加一半。
         int newCapacity = oldCapacity + (oldCapacity >> 1);
+        //如果扩容后的容量还是小于想要的最小容量
         if (newCapacity - minCapacity < 0)
+            //将扩容后的容量再次扩容为想要的最小容量
             newCapacity = minCapacity;
+        //如果扩容后的容量大于临界值，则进行大容量分配
         if (newCapacity - MAX_ARRAY_SIZE > 0)
             newCapacity = hugeCapacity(minCapacity);
         // minCapacity is usually close to size, so this is a win:
         elementData = Arrays.copyOf(elementData, newCapacity);
     }
 
+    /**
+     * 进行大容量分配
+     * @param minCapacity
+     * @return
+     */
     private static int hugeCapacity(int minCapacity) {
+        //如果minCapacity<0，抛出异常
         if (minCapacity < 0) // overflow
             throw new OutOfMemoryError();
+        //如果想要的容量大于MAX_ARRAY_SIZE，则分配Integer.MAX_VALUE，否则分配MAX_ARRAY_SIZE
         return (minCapacity > MAX_ARRAY_SIZE) ?
             Integer.MAX_VALUE :
             MAX_ARRAY_SIZE;
@@ -453,12 +462,13 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
-     * Appends the specified element to the end of this list.
+     * 添加元素到list末尾.
      *
      * @param e element to be appended to this list
      * @return <tt>true</tt> (as specified by {@link Collection#add})
      */
     public boolean add(E e) {
+        //确认list容量，如果不够，容量加1。注意：只加1，保证资源不被浪费
         ensureCapacityInternal(size + 1);  // Increments modCount!!
         elementData[size++] = e;
         return true;
